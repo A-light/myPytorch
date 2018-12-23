@@ -43,8 +43,8 @@ class MyLeNet(nn.Module):
 				'conv3':nn.Conv2d(1,10,3,1),
 				'conv4':nn.Conv2d(1,10,5,1),
 				'conv5':nn.Conv2d(1,6,5,1),##c1
-				'conv6':nn.Conv2d(6,16,5,1), ##c3
-				'conv7':nn.Conv2d(16,120,5,1)
+				'conv6':nn.Conv2d(6,16,5,1), ##c2
+				'conv7':nn.Conv2d(16,120,5,1) ##c3
 			})
 		self.choice_pooling = nn.ModuleDict({
 				'maxpooling1':nn.MaxPool2d(2,2),
@@ -72,13 +72,19 @@ class MyLeNet(nn.Module):
 	def forward(self,x):
 		x=self.choice_conv['conv5'](x)
 		x=self.choice_activations['rule'](x)
+		print(x.size()[0],x.size()[1],x.size()[2])
 		x=self.choice_conv['conv6'](x)
 		x=self.choice_activations['rule'](x)
+		print(x.size()[0],x.size()[1],x.size()[2])
 		x=self.choice_pooling['maxpooling1'](x)
+		print(x.size()[0],x.size()[1],x.size()[2])
 		x=self.choice_pooling['maxpooling1'](x)
-
+		print(x.size()[0],x.size()[1],x.size()[2])
 		x=self.choice_conv['conv7'](x)
 		x=self.choice_activations['rule'](x)
+		#print(x)
+		print(x.size()[0],x.size()[1],x.size()[2])
+
 		out=x.view(x.size()[0],-1)
 		out=self.choice_fc['f1'](out)
 		out=self.choice_fc['f2'](out)
@@ -114,7 +120,7 @@ with torch.no_grad():
 		images=images.to(device)
 		labels=labels.to(device)
 
-		y = mynet.forward(images)
+		y = mylenet.forward(images)
 		
 		_,predicted=torch.max(y.data,1)
 		total+=labels.size(0) #??
