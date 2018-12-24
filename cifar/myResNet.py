@@ -3,6 +3,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import torchvision
+import torch.optim as optim
 import torchvision.transforms as transforms
 from torch.autograd import Variable
 from torchvision.datasets import CIFAR10
@@ -10,6 +11,7 @@ from torchvision.datasets import CIFAR10
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 num_epochs = 5
 batch_size = 100
+learning_rate = 0.001
 
 train_dataset = torchvision.datasets.CIFAR10(root='/data_cifar10',
 											train=True, 
@@ -28,13 +30,26 @@ test_loader = torch.utils.data.DataLoader(test_dataset,
 											batch_size,
 										 shuffle=False)
 
+def Conv3x3(input_channels,output_chanels,n):
+		current_layer = nn.Sequential()
+		for i in range(n-1):
+			layer = nn.Conv2d(input_channels,output_chanels,3,1)
+			current_layer.add_module('inner_layer{}'.format(i),layer)
+			current_layer.add_module('relu',nn.ReLU())
+			input_channels = output_chanels
+			output_chanels = 2*output_chanels
+			print(input_channels,output_chanels)
+		conv = nn.Conv2d(input_channels,output_chanels,3,1)
+		current_layer.add_module('inner_layer{}'.format(i),conv)
+		return current_layer
+
 class ResNetI(nn.Module):
 	"""docstring for ResNetI"""
-	def __init__(self, arg):
+	def __init__(self):
 		super(ResNetI, self).__init__()
 		#self.layer = nn.Conv2d(1,64,7,2)
 		self.layer0 = nn.Sequential(
-				nn.Conv2d(1,1,3,1,1),
+				nn.Conv2d(3,1,3,1,1),
 				nn.ReLU()
 			)
 		self.layer1 = Conv3x3(1,2,2)
@@ -44,7 +59,7 @@ class ResNetI(nn.Module):
 		self.layer5 = Conv3x3(32,32,2)
 		self.layer6 = Conv3x3(64,64,2)
 		self.pooling = nn.Sequential(
-				nn.Maxpool2d(2,2),
+				nn.MaxPool2d(2,2),
 				nn.AvgPool2d(2,2)
 			)
 		self.fc = nn.Sequential(
@@ -52,21 +67,8 @@ class ResNetI(nn.Module):
 				nn.ReLU()
 			)
 
-	def Conv3x3(input_channels,output_chanels,n):
-		current_layer = nn.Sequential()
-		for i in range(n-1):
-			layer = nn.Sequential(
-					nn.Conv2d(input_channels,output_chanels,3,1),
-					nn.ReLU()
-				)
-			nn.add_module(layer,current_layer)
-			input_channels = output_chanels
-			output_chanels = 2*output_chanels
-		conv = nn.Conv2d(input_channels,output_chanels,3,1)
-		nn.add_module(conv,current_layer)
-		return current_layer
-
 	def forward(self,x):
+		print(x.size())
 		x = self.layer0(x)
 
 		out = self.layer1(x)
