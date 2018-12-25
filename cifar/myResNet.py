@@ -30,18 +30,28 @@ test_loader = torch.utils.data.DataLoader(test_dataset,
 											batch_size,
 										 shuffle=False)
 
-def Conv3x3(input_channels,output_chanels,n):
-		current_layer = nn.Sequential()
+def Conv3x3(input_channels,output_chanels,n):#1,2
+		current_layer = nn.Sequential(
+			nn.Conv2d(input_channels,output_chanels,3,1),
+			nn.ReLU()
+		)
 		for i in range(n-1):
-			layer = nn.Conv2d(input_channels,output_chanels,3,1)
-			current_layer.add_module('inner_layer{}'.format(i),layer)
-			current_layer.add_module('relu',nn.ReLU())
 			input_channels = output_chanels
 			output_chanels = 2*output_chanels
 			print(input_channels,output_chanels)
-		conv = nn.Conv2d(input_channels,output_chanels,3,1)
-		current_layer.add_module('inner_layer{}'.format(i),conv)
+			conv = nn.Conv2d(input_channels,output_chanels,3,1)
+			current_layer.add_module('inner_layer{}'.format(i),conv)
 		return current_layer
+def data_reshape(input_channels,output_chanels,x):
+	conv=nn.Conv2d(input_channels,output_chanels,5,1)
+	out=conv(x)
+	return out
+
+def data_reshape1(input_channels,output_chanels,x):
+	conv=nn.Linear(input_channels,output_chanels,5,1)
+	out=conv(x)
+	return out
+
 
 class ResNetI(nn.Module):
 	"""docstring for ResNetI"""
@@ -49,52 +59,89 @@ class ResNetI(nn.Module):
 		super(ResNetI, self).__init__()
 		#self.layer = nn.Conv2d(1,64,7,2)
 		self.layer0 = nn.Sequential(
-				nn.Conv2d(3,1,3,1,1),
+				nn.Conv2d(3,2,3,1,1),
 				nn.ReLU()
 			)
-		self.layer1 = Conv3x3(1,2,2)
+		self.layer1 = Conv3x3(2,2,2)
 		self.layer2 = Conv3x3(4,4,2)
 		self.layer3 = Conv3x3(8,8,2)
 		self.layer4 = Conv3x3(16,16,2)
 		self.layer5 = Conv3x3(32,32,2)
-		self.layer6 = Conv3x3(64,64,2)
+		self.layer6 = Conv3x3(64,128,2)
 		self.pooling = nn.Sequential(
+				nn.MaxPool2d(2,2),
 				nn.MaxPool2d(2,2),
 				nn.AvgPool2d(2,2)
 			)
 		self.fc = nn.Sequential(
-				nn.Linear(128,10),
+				nn.Linear(128*2,10),
 				nn.ReLU()
 			)
 
+
+
 	def forward(self,x):
-		print(x.size())
+		#print(x.size())
 		x = self.layer0(x)
 
 		out = self.layer1(x)
-		out = self.ReLU(x+out)
+		#print(x.size(),out.size())
+		#x=nn.BatchNorm2d(out.size()[1])
+		#
+		x=data_reshape(x.size()[1],out.size()[1],x)
+		#print(x.size(),out.size())
+		out = F.relu(x+out)
 		x = out
 
 		out = self.layer2(x)
-		out = self.ReLU(x+out)
+		#print(x.size(),out.size())
+		#x=nn.BatchNorm2d(out.size()[1])
+		#
+		x=data_reshape(x.size()[1],out.size()[1],x)
+		#print(x.size(),out.size())
+		out = F.relu(x+out)
 		x = out
+		#print(type(out))
 
 		out = self.layer3(x)
-		out = self.ReLU(x+out)
+		#print(x.size(),out.size())
+		#x=nn.BatchNorm2d(out.size()[1])
+		#
+		x=data_reshape(x.size()[1],out.size()[1],x)
+		#print(x.size(),out.size())
+		out = F.relu(x+out)
 		x = out
 
 		out = self.layer4(x)
-		out = self.ReLU(x+out)
+		#print(x.size(),out.size())
+		#x=nn.BatchNorm2d(out.size()[1])
+		#
+		x=data_reshape(x.size()[1],out.size()[1],x)
+		#print(x.size(),out.size())
+		out = F.relu(x+out)
 		x = out
 
 		out = self.layer5(x)
-		out = self.ReLU(x+out)
+		#print(x.size(),out.size())
+		#x=nn.BatchNorm2d(out.size()[1])
+		#
+		x=data_reshape(x.size()[1],out.size()[1],x)
+		#print(x.size(),out.size())
+		out = F.relu(x+out)
 		x = out
 
 		out = self.layer6(x)
-		out = self.ReLU(x+out)
+		#print(x.size(),out.size())
+		#x=nn.BatchNorm2d(out.size()[1])
+		#
+		x=data_reshape(x.size()[1],out.size()[1],x)
+		#print(x.size(),out.size())
+		out = F.relu(x+out)
 		x = out
+		#print(x.size())
 
+		x=self.pooling(x)
+		#print(x.size())
 		x=x.view(x.size()[0],-1)
 		
 		return self.fc(x)
